@@ -56,6 +56,96 @@ ON ob.country_code=co.country_code
 WHERE co.region='Africa'
 ORDER BY ob.funding_total_usd DESC;
 
+/*2. Do you think the level of degree impacts the size of the funding round?*/
+
+/*Founders who has Bachelors degree has the most founding rounds (17171).*/
+
+SELECT
+ (CASE
+	WHEN 
+	(de.degree_type LIKE ('B%') OR de.degree_type LIKE ('%BSc%') OR 
+	de.degree_type LIKE ('%Bachelor%') OR de.degree_type LIKE ('JD%')  OR de.degree_type LIKE ('Juris%') OR de.degree_type LIKE ('Law%') OR de.degree_type LIKE ('%Degree%'))THEN 'Bachelors'
+	WHEN 
+	(de.degree_type LIKE ('%M.%')OR de.degree_type LIKE ('%Grad%') OR de.degree_type LIKE ('%MBA%') OR de.degree_type LIKE ('%MS%') OR de.degree_type LIKE ('%MB%') OR de.degree_type LIKE ('%Master%')) THEN 'Masters' 
+    WHEN 
+	(de.degree_type LIKE ('%Ph%')OR de.degree_type LIKE ('%Phil%') OR de.degree_type LIKE ('%Doctor%')OR de.degree_type LIKE ('D.%')) THEN 'Ph.D'
+	WHEN 
+	(de.degree_type LIKE ('%Dip%')) THEN 'Diploma'
+	ELSE 'Others'
+	END) AS degree_type,
+COUNT((CASE
+	WHEN 
+	(de.degree_type LIKE ('B%') OR de.degree_type LIKE ('%BSc%') OR 
+	de.degree_type LIKE ('%Bachelor%') OR de.degree_type LIKE ('JD%')  OR de.degree_type LIKE ('Juris%') OR de.degree_type LIKE ('Law%') OR de.degree_type LIKE ('%Degree%'))THEN 'Bachelors'
+	WHEN 
+	(de.degree_type LIKE ('%M.%')OR de.degree_type LIKE ('%Grad%') OR de.degree_type LIKE ('%MBA%') OR de.degree_type LIKE ('%MS%') OR de.degree_type LIKE ('%MB%') OR de.degree_type LIKE ('%Master%')) THEN 'Masters' 
+    WHEN 
+	(de.degree_type LIKE ('%Ph%')OR de.degree_type LIKE ('%Phil%') OR de.degree_type LIKE ('%Doctor%')OR de.degree_type LIKE ('D.%')) THEN 'Ph.D'
+	WHEN 
+	(de.degree_type LIKE ('%Dip%')) THEN 'Diploma'
+	ELSE 'Others'
+	END)) AS no_of_founders,
+SUM(ob.funding_total_usd) total_funding_generated,
+SUM(ob.funding_rounds) AS no_of_funding_rounds,
+SUM(ob.funding_total_usd)/NULLIF(COUNT((CASE
+	WHEN 
+	(de.degree_type LIKE ('B%') OR de.degree_type LIKE ('%BSc%') OR 
+	de.degree_type LIKE ('%Bachelor%') OR de.degree_type LIKE ('JD%')  OR de.degree_type LIKE ('Juris%') OR de.degree_type LIKE ('Law%') OR de.degree_type LIKE ('%Degree%'))THEN 'Bachelors'
+	WHEN 
+	(de.degree_type LIKE ('%M.%')OR de.degree_type LIKE ('%Grad%') OR de.degree_type LIKE ('%MBA%') OR de.degree_type LIKE ('%MS%') OR de.degree_type LIKE ('%MB%') OR de.degree_type LIKE ('%Master%')) THEN 'Masters' 
+    WHEN 
+	(de.degree_type LIKE ('%Ph%')OR de.degree_type LIKE ('%Phil%') OR de.degree_type LIKE ('%Doctor%')OR de.degree_type LIKE ('D.%')) THEN 'Ph.D'
+	WHEN 
+	(de.degree_type LIKE ('%Dip%')) THEN 'Diploma'
+	ELSE 'Others'
+	END)),0) AS funding_per_degree
+from degrees de
+JOIN relationships re
+ON de.object_id = re.person_object_id
+JOIN objects ob
+ON re.relationship_object_id =ob.object_id
+WHERE re.title LIKE '%Founder%'
+GROUP BY( (CASE
+	WHEN 
+	(de.degree_type LIKE ('B%') OR de.degree_type LIKE ('%BSc%') OR 
+	de.degree_type LIKE ('%Bachelor%') OR de.degree_type LIKE ('JD%')  OR de.degree_type LIKE ('Juris%') OR de.degree_type LIKE ('Law%') OR de.degree_type LIKE ('%Degree%'))THEN 'Bachelors'
+	WHEN 
+	(de.degree_type LIKE ('%M.%')OR de.degree_type LIKE ('%Grad%') OR de.degree_type LIKE ('%MBA%') OR de.degree_type LIKE ('%MS%') OR de.degree_type LIKE ('%MB%') OR de.degree_type LIKE ('%Master%')) THEN 'Masters' 
+    WHEN 
+	(de.degree_type LIKE ('%Ph%')OR de.degree_type LIKE ('%Phil%') OR de.degree_type LIKE ('%Doctor%')OR de.degree_type LIKE ('D.%')) THEN 'Ph.D'
+	WHEN 
+	(de.degree_type LIKE ('%Dip%')) THEN 'Diploma'
+	ELSE 'Others'
+	END))
+ORDER BY degree_type;
+
+/*2a. . What university did the founder that has the most funding rounds attend*/
+
+SELECT TOP 4 CONCAT(pe.first_name,' ', pe.last_name) AS founder_name, re.title, de.institution, ob.name, ob.funding_rounds, ob.funding_total_usd
+FROM objects ob
+JOIN relationships re
+ON ob.object_id=re.relationship_object_id
+JOIN people pe
+ON re.person_object_id=pe.object_id
+JOIN degrees de
+ON pe.object_id=de.object_id
+ORDER BY ob.funding_rounds DESC;
+
+/*2b.How many founders attended the school in [a] and how many of them have an
+IPO*/
+
+/*None*/
+
+SELECT de.institution, COUNT(de.institution) AS no_of_alumni_founder
+FROM degrees de
+JOIN relationships re
+ON de.object_id = re.person_object_id
+JOIN ipos ip
+ON re.relationship_object_id = ip.object_id
+WHERE de.institution ='University of New South Wales' AND re.title LIKE '%Founder%'
+GROUP BY de.institution;
+
+
 /*3.Region with the most startups*/
 
 /*The Top Region with the most startups is
